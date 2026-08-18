@@ -2,6 +2,10 @@
 
 **DeepSeek Harness (DSH) 实时下载进度条** —— 下载文件时，右下角悬浮层每秒自动更新进度条（文件名 / 百分比 / 速度 / 剩余时间 / 完成态），无需手动刷新。
 
+*Realtime download progress bar for DeepSeek Harness: a floating overlay that auto-refreshes every second showing file name / percent / speed / ETA — no manual refresh needed.*
+
+![demo](docs/progress-demo.png)
+
 ## 功能
 
 - 🖥️ 右下角悬浮层实时进度条，每秒自动轮询更新
