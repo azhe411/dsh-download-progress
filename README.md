@@ -1,24 +1,28 @@
 # ⬇️ dsh-download-progress
 
-**DeepSeek Harness (DSH) 实时下载进度条** —— 下载文件时，右下角悬浮层每秒自动更新进度条（文件名 / 百分比 / 速度 / 剩余时间 / 完成态），无需手动刷新。
+**DeepSeek Harness (DSH) 常驻下载管理器** —— 右下角常驻面板，实时显示所有下载任务的进度（文件名 / 百分比 / 速度 / 剩余时间），支持多任务、历史记录、拖动和缩放。
 
-*Realtime download progress bar for DeepSeek Harness: a floating overlay that auto-refreshes every second showing file name / percent / speed / ETA — no manual refresh needed.*
+*Always-on download manager for DeepSeek Harness: floating panel showing every download's realtime progress (file name / percent / speed / ETA), with multi-task support, history, drag & resize.*
 
 ![demo](docs/progress-demo.png)
 
 ## 功能
 
-- 🖥️ 右下角悬浮层实时进度条，每秒自动轮询更新
-- 📄 显示文件名、百分比、已下载/总大小、速度、剩余时间
-- ✅ 完成态变绿显示「✅ 下载完成」，错误态显示原因
+- 🖥️ **常驻面板**：右下角一直显示（无任务时显示「待命」），不消失
+- 📄 每个下载任务一行：文件名、百分比、速度、剩余时间
+- ✅ **多任务并发**：同时下载多个文件，每个任务独立进度条
+- 🕐 **历史记录**：已完成/失败的任务保留在列表（显示完成时间），最多 20 条
+- 🔽 **可展开**：标题栏 ▾/▸ 按钮收起/展开任务列表
+- 🖱️ **可拖动**：标题栏拖动移动面板位置
+- 📐 **可缩放**：右下角手柄调整面板大小
 - 🔄 下载工具支持断点续传、HTTP 重定向跟随、GitHub 镜像加速
 
 ## 组成
 
 | 文件 | 说明 |
 | --- | --- |
-| `download.cjs` | 带进度的下载工具（Node.js，写状态到 `~/.dsh/downloads/active.json`） |
-| `plugin-definition.json` | DSH 动态 Cordis 插件定义（进度条 UI） |
+| `download.cjs` | 下载工具（Node.js，每个任务写状态到 `~/.dsh/downloads/tasks/<任务>.json`，完成后保留=历史） |
+| `plugin-definition.json` | DSH 动态 Cordis 插件定义（常驻下载管理面板 UI） |
 
 ## 安装
 

@@ -1,7 +1,7 @@
-// download.cjs - 带实时进度的下载工具 (v2)
+// download.cjs - 带实时进度的下载工具 (v3)
 // 用法: node download.cjs <url> <输出路径> [--mirror=<前缀>]
-// 进度状态写入 ~/.dsh/downloads/active.json (供 download-progress 插件每秒轮询显示)
-// v2 修复: 探测 URL 与下载分离, 避免重定向丢数据; 支持断点续传
+// 进度状态写入 ~/.dsh/downloads/tasks/<任务名>.json (每任务独立, 完成后保留=历史)
+// v3: 多任务支持 - 每个下载任务一个状态文件, 完成/错误后留在 tasks/ 目录作为历史
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -10,20 +10,22 @@ const os = require('os');
 
 const url = process.argv[2];
 const outPath = process.argv[3];
-// 标准状态文件: ~/.dsh/downloads/active.json (进度条插件读这个)
-const STATUS_DIR = path.join(os.homedir(), '.dsh', 'downloads');
-const statusFile = path.join(STATUS_DIR, 'active.json');
+// 任务状态目录: ~/.dsh/downloads/tasks/<文件名去扩展名>.json
+const STATUS_DIR = path.join(os.homedir(), '.dsh', 'downloads', 'tasks');
+const fileName = path.basename(outPath);
+const taskId = fileName.replace(/\.[^.]+$/, '') + '-' + Date.now().toString(36);
+const statusFile = path.join(STATUS_DIR, taskId + '.json');
 let mirrorPrefix = '';
 for (const a of process.argv.slice(4)) {
   if (a.startsWith('--mirror=')) mirrorPrefix = a.slice(9);
 }
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
-// 文件名 (从输出路径取, 进度条显示用)
-const fileName = path.basename(outPath);
 
 function writeStatus(obj) {
   try {
     fs.mkdirSync(STATUS_DIR, { recursive: true });
+    // 记录任务开始时间 (首次写入时)
+    if (!obj.startedAt) obj.startedAt = Date.now();
     fs.writeFileSync(statusFile, JSON.stringify(obj));
   } catch (e) {}
 }
@@ -107,13 +109,13 @@ function download(finalUrl, total, ws, outPath, cb) {
     });
     res.on('end', () => {
       const elapsedSec = (Date.now() - startTime) / 1000;
-      writeStatus({ name: fileName, finalUrl, total, downloaded, percent: 100, speedMBps: Math.round((downloaded / 1048576 / elapsedSec) * 100) / 100, elapsedSec: Math.round(elapsedSec), etaSec: 0, status: 'done' });
+      writeStatus({ name: fileName, finalUrl, total, downloaded, percent: 100, speedMBps: Math.round((downloaded / 1048576 / elapsedSec) * 100) / 100, elapsedSec: Math.round(elapsedSec), etaSec: 0, status: 'done', endedAt: Date.now() });
       process.stdout.write('\n[download] 完成: ' + outPath + '\n');
       cb(null);
     });
-    res.on('error', (e) => { writeStatus({ name: fileName, status: 'error', error: String(e.message) }); cb(e); });
+    res.on('error', (e) => { writeStatus({ name: fileName, status: 'error', error: String(e.message), endedAt: Date.now() }); cb(e); });
   });
-  req.on('error', (e) => { writeStatus({ name: fileName, status: 'error', error: String(e.message) }); cb(e); });
+  req.on('error', (e) => { writeStatus({ name: fileName, status: 'error', error: String(e.message), endedAt: Date.now() }); cb(e); });
 }
 
 (async () => {
