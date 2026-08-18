@@ -24,10 +24,26 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 function writeStatus(obj) {
   try {
     fs.mkdirSync(STATUS_DIR, { recursive: true });
-    // 记录任务开始时间 (首次写入时)
     if (!obj.startedAt) obj.startedAt = Date.now();
+    if (!obj.outPath) obj.outPath = outPath;
+    if (!obj.taskId) obj.taskId = taskId;
     fs.writeFileSync(statusFile, JSON.stringify(obj));
   } catch (e) {}
+}
+
+// 取消检测: ~/.dsh/downloads/cancel.txt 每行一个 taskId, 出现则中断
+const CANCEL_FILE = path.join(os.homedir(), '.dsh', 'downloads', 'cancel.txt');
+function shouldCancel() {
+  try {
+    if (!fs.existsSync(CANCEL_FILE)) return false
+    const lines = fs.readFileSync(CANCEL_FILE, 'utf-8').split('\n').map(l => l.trim())
+    return lines.includes(taskId)
+  } catch (e) { return false }
+}
+function markCancelled() {
+  writeStatus({ name: fileName, status: 'cancelled', error: '已取消', endedAt: Date.now() })
+  process.stdout.write('\n[download] 已取消: ' + outPath + '\n')
+  process.exit(0)
 }
 
 // 探测最终 URL (HEAD, 跟随重定向), 返回 { finalUrl, total }
@@ -86,7 +102,14 @@ function download(finalUrl, total, ws, outPath, cb) {
         ws.once('drain', () => res.resume())
       }
       const now = Date.now();
+      // 取消检测 (每 500ms)
       if (now - lastTick >= 500) {
+        if (shouldCancel()) {
+          res.destroy()
+          try { ws.close() } catch (e) {}
+          markCancelled()
+          return
+        }
         const dt = (now - lastTick) / 1000;
         const inst = (downloaded - lastBytes) / dt;
         speedWindow.push(inst);
