@@ -1,0 +1,4 @@
+# dsh-download-progress bundle patch — 安装后自动激活下载管理器面板
+- insert:
+    - id: dl-manager
+      name: dsh-download-progress
