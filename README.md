@@ -1,6 +1,6 @@
-# ⬇️ dsh-download-progress
+# dsh-download-progress
 
-**DeepSeek Harness (DSH) 常驻下载管理器** —— 右下角常驻面板，实时显示所有下载任务的进度（文件名 / 百分比 / 速度 / 剩余时间），支持多任务、历史记录、拖动和缩放。
+DeepSeek Harness (DSH) 的常驻下载管理器。右下角有个小面板，实时显示每个下载任务的进度：文件名、百分比、速度、剩余时间。支持多任务、历史记录、拖动和缩放。
 
 *Always-on download manager for DeepSeek Harness: floating panel showing every download's realtime progress (file name / percent / speed / ETA), with multi-task support, history, drag & resize.*
 
@@ -8,15 +8,14 @@
 
 ## 功能
 
-- 🖥️ **常驻面板**：右下角一直显示（无任务时显示「待命」），不消失
-- 📄 每个下载任务一行：文件名、百分比、速度、剩余时间
-- ✅ **多任务并发**：同时下载多个文件，每个任务独立进度条
-- 🕐 **历史记录**：已完成/失败的任务保留在列表（显示完成时间），最多 20 条
-- 📁 **打开文件位置**：点已完成/失败任务的「📁 打开」按钮，在文件资源管理器中定位该文件
-- 🔽 **可展开**：标题栏 ▾/▸ 按钮收起/展开任务列表（收起时只留标题栏一行）
-- 🖱️ **可拖动**：标题栏拖动移动面板位置
-- 📐 **可缩放**：右下角手柄调整面板大小
-- 🔄 下载工具支持断点续传、HTTP 重定向跟随、GitHub 镜像加速
+- 右下角常驻面板，没任务时显示「待命」，不会自己消失
+- 每个下载任务一行：文件名、百分比、速度、剩余时间
+- 多任务并发，每个任务独立进度条
+- 历史记录：已完成/失败的任务留在列表里（带完成时间），最多 20 条
+- 点「打开」按钮，在文件资源管理器里定位已完成/失败的文件
+- 标题栏 ▾/▸ 按钮收起/展开任务列表，收起时只留一行
+- 面板可以拖动（标题栏）和缩放（右下角手柄）
+- 下载工具支持断点续传、HTTP 重定向跟随、GitHub 镜像加速
 
 ## 组成
 
@@ -24,7 +23,7 @@
 | --- | --- |
 | `download.cjs` | 下载工具（Node.js，每个任务写状态到 `~/.dsh/downloads/tasks/<任务>.json`，完成后保留=历史） |
 | `plugin-definition.json` | DSH 动态 Cordis 插件定义（常驻下载管理面板 UI） |
-| `@local/dl-manager/` | **固化版插件包**（v2）：装进 `~/.dsh/profiles/web/node_modules/@local/`，重启自动加载，无需每次 cordis_define |
+| `@local/dl-manager/` | 固化版插件包（v2）：装进 `~/.dsh/profiles/web/node_modules/@local/`，重启自动加载，不用每次 cordis_define |
 
 ## 安装
 
@@ -43,7 +42,7 @@ cp download.cjs ~/.dsh/scripts/download.cjs
 - Host 端：注册 `dl-tasks` RPC，读取 `~/.dsh/downloads/tasks/` 目录（v2 改为按任务文件读，支持多任务）
 - Client 端：注册 `shell.overlay` 悬浮层，每秒 `host.call('dl-tasks')` 轮询刷新
 
-> ⚠️ 如果进度条一直显示「待命」，可能是 `fs.resolve('~/.dsh/...')` 未展开 `~`，把 Host 代码里的路径改为绝对路径（如 `C:/Users/<你>/.dsh/downloads/tasks`）。
+> 如果进度条一直显示「待命」，可能是 `fs.resolve('~/.dsh/...')` 没展开 `~`。把 Host 代码里的路径改成绝对路径（如 `C:/Users/<你>/.dsh/downloads/tasks`）。
 
 **方式 B：固化插件（推荐，重启自动加载）**
 
@@ -59,7 +58,7 @@ cp -r @local/dl-manager ~/.dsh/profiles/web/node_modules/@local/dl-manager
 # 3. 重启 dsh web，刷新浏览器，右下角出现「⬇ 下载」面板
 ```
 
-固化版 host 半用 `ctx.webServer.register` 注册 `/api/dl-manager/tasks` 和 `/api/dl-manager/open` 两个 HTTP 端点，client 半用 `fetch` 轮询——**不使用**动态插件专属的 `harness.handle`（见踩坑记录）。
+固化版 host 半用 `ctx.webServer.register` 注册 `/api/dl-manager/tasks` 和 `/api/dl-manager/open` 两个 HTTP 端点，client 半用 `fetch` 轮询。**不要用**动态插件专属的 `harness.handle`（见踩坑记录）。
 
 ### 3. 多线程下载（可选，大文件加速）
 
@@ -81,11 +80,11 @@ node ~/.dsh/scripts/download.cjs <URL> <输出路径> --mirror=https://gh-proxy.
 node ~/.dsh/scripts/aria2-dl.cjs <URL> <输出路径> --mirror=https://gh-proxy.com/
 ```
 
-下载开始后，右下角自动弹出进度条；完成后回到「待命」状态。
+下载一开始，右下角自动弹出进度条；全部结束后回到「待命」状态。
 
 ## 国内下载加速
 
-GitHub 大文件国内直连常超时，推荐镜像（响应快但偶发不稳定）：
+GitHub 大文件国内直连经常超时。推荐镜像（响应快，但偶发不稳定）：
 - `https://gh-proxy.com/`
 - `https://ghfast.top/`
 - `https://ghproxy.net/`
@@ -95,9 +94,9 @@ GitHub 大文件国内直连常超时，推荐镜像（响应快但偶发不稳�
 - **drain 恢复作用域**：下载工具的 `res.on('drain')` 恢复必须在 `res` 回调作用域内注册，否则报 `ReferenceError: res is not defined`
 - **动态 client 无 setInterval**：DSH 动态客户端没有浏览器定时器全局，必须用 `timer` 服务的 `ctx.interval`，且插件需 `inject: ['timer']`
 - **限速无效**：`pause/resume` 节流对 Node 大缓冲无效，已移除限速功能
-- **⚠️ 固化版不能用 `harness.handle`（v1 崩溃教训）**：动态插件跑在 vm 沙箱里，`harness` 是沙箱注入的全局；但固化包（`@local/` 常规 cordis 插件）作用域**没有** `harness` 全局——把动态插件的 host 代码直接抄进固化包会抛 `ReferenceError: harness is not defined`，**启动即崩 web**。固化版 host 必须改用 `ctx.webServer.register` 注册 HTTP 端点（与 dsh-usage-stats 同模式），client 端用 `fetch` 替代 `host.call`
-- **⚠️ aria2 RPC 必须带 `Content-Length`**：`http.request` 不设该头会走 chunked 传输，aria2 的 RPC 服务器拒绝 → `Parse error` 500 → 进度永远 0%。加 `'Content-Length': Buffer.byteLength(body)` 解决
-- **aria2 RPC 模式不自动退出**：下载完成后进程不退出，需轮询 `tellStopped` 收尾写 `done` 状态，再 `aria2.shutdown`
+- **固化版不能用 `harness.handle`（v1 崩溃教训）**：动态插件跑在 vm 沙箱里，`harness` 是沙箱注入的全局。固化包（`@local/` 常规 cordis 插件）作用域**没有**这个全局，把动态插件的 host 代码直接抄进固化包会抛 `ReferenceError: harness is not defined`，启动即崩 web。固化版 host 必须改用 `ctx.webServer.register` 注册 HTTP 端点（和 dsh-usage-stats 同模式），client 端用 `fetch` 替代 `host.call`
+- **aria2 RPC 必须带 `Content-Length`**：`http.request` 不设这个头会走 chunked 传输，aria2 的 RPC 服务器拒绝，报 `Parse error` 500，进度永远 0%。加 `'Content-Length': Buffer.byteLength(body)` 解决
+- **aria2 RPC 模式不自动退出**：下载完成后进程不退出，需要轮询 `tellStopped` 收尾写 `done` 状态，再 `aria2.shutdown`
 
 ## License
 
