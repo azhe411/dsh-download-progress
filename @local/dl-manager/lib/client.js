@@ -61,6 +61,12 @@ window.__ModuleLoader__.load({
 							.then((d) => { if (d && d.error) setErr('打开失败: ' + d.error); })
 							.catch((e) => setErr(String(e && e.message ? e.message : e)));
 					};
+					const deleteTask = (taskId) => {
+						fetch('/api/dl-manager/delete?taskId=' + encodeURIComponent(taskId))
+							.then((r) => r.json())
+							.then((d) => { if (d && d.error) setErr('删除失败: ' + d.error); })
+							.catch((e) => setErr(String(e && e.message ? e.message : e)));
+					};
 
 					const collapsedH = 36;
 					const panel = {
@@ -97,7 +103,7 @@ window.__ModuleLoader__.load({
 						),
 						expanded ? React.createElement('div', { style: { maxHeight: 300, overflowY: 'auto', flex: 1 } },
 							(!tasks || tasks.length === 0) ? React.createElement('div', { style: { padding: '16px 12px', fontSize: 12, color: '#888' } }, '暂无下载任务') :
-								tasks.map((t) => React.createElement(TaskRow, { key: t.taskId || t.name, task: t, onOpen: openTask })),
+								tasks.map((t) => React.createElement(TaskRow, { key: t.taskId || t.name, task: t, onOpen: openTask, onDelete: deleteTask })),
 						) : null,
 						err ? React.createElement('div', { style: { fontSize: 11, color: '#e5484d', padding: '0 12px 8px' } }, 'err: ' + err) : null,
 						expanded ? React.createElement('div', { style: grip, onPointerDown: onResizePointerDown }) : null,
@@ -117,6 +123,7 @@ window.__ModuleLoader__.load({
 				const bar = { height: 5, borderRadius: 3, background: '#2a2a2a', overflow: 'hidden', width: '100%', marginTop: 4 };
 				const fill = { height: '100%', width: pct + '%', background: t.status === 'done' ? '#46a758' : t.status === 'error' || t.status === 'cancelled' ? '#e5484d' : '#4c9aff' };
 				const btn = { cursor: 'pointer', fontSize: 11, padding: '2px 6px', borderRadius: 4, background: '#333', color: '#ccc', marginLeft: 6 };
+				const btnRed = { cursor: 'pointer', fontSize: 11, padding: '2px 6px', borderRadius: 4, background: '#333', color: '#e5484d', marginLeft: 6 };
 				const statusText = t.status === 'done' ? '✅ ' + timeStr : t.status === 'error' ? '❌ 失败' : t.status === 'cancelled' ? '⏹ 已取消' : pct + '%';
 				const statusColor = t.status === 'done' ? '#46a758' : t.status === 'error' || t.status === 'cancelled' ? '#e5484d' : '#999';
 				return React.createElement('div', { style: row },
@@ -124,6 +131,7 @@ window.__ModuleLoader__.load({
 						React.createElement('span', { style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 } }, t.name || '未知'),
 						React.createElement('span', { style: { color: statusColor, marginLeft: 8, fontSize: 11 } }, statusText),
 						(t.status === 'done' || t.status === 'error' || t.status === 'cancelled') ? React.createElement('span', { style: btn, onClick: () => props.onOpen(t.taskId) }, '📁 打开') : null,
+						React.createElement('span', { style: btnRed, onClick: () => props.onDelete(t.taskId) }, '🗑️ 删除'),
 					),
 					active ? React.createElement('div', { style: bar }, React.createElement('div', { style: fill })) : null,
 					active ? React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginTop: 3 } },

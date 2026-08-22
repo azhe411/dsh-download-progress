@@ -7,7 +7,7 @@
 //      模块（readdirSync / execFile），不再依赖 ctx.fs 与 ctx.subprocess
 import { homedir } from 'os';
 import { join } from 'path';
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync, unlinkSync } from 'fs';
 import { execFile } from 'child_process';
 
 const HOME = homedir();
@@ -15,6 +15,7 @@ const BASE = join(HOME, '.dsh');
 const TASKS_DIR = join(BASE, 'downloads', 'tasks');
 const TASKS_PATH = '/api/dl-manager/tasks';
 const OPEN_PATH = '/api/dl-manager/open';
+const DELETE_PATH = '/api/dl-manager/delete';
 
 // cordis 注入声明：本插件只依赖 webServer 服务（由 dsh-host-webserver 提供）。
 // 未注入的服务在 ctx 上取属性会直接抛错，必须显式声明。
@@ -72,4 +73,22 @@ export function apply(ctx) {
       }
     },
   }), 'dl-manager: open route');
+
+  // 删除记录（只删任务 JSON，不删已下载的文件）
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: DELETE_PATH,
+    handler: async (req, res) => {
+      try {
+        const u = new URL(req.url, 'http://local');
+        const taskId = u.searchParams.get('taskId') || '';
+        if (!taskId) return sendJson(res, 400, { ok: false, error: '缺少 taskId' });
+        const taskFile = join(TASKS_DIR, taskId + '.json');
+        unlinkSync(taskFile);
+        return sendJson(res, 200, { ok: true });
+      } catch (e) {
+        return sendJson(res, 404, { ok: false, error: String(e) });
+      }
+    },
+  }), 'dl-manager: delete route');
 }
